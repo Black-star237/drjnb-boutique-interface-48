@@ -62,11 +62,6 @@ const ProductForm = ({ categories, onSubmit }: ProductFormProps) => {
       is_active: true,
       images: [""]
     });
-
-    toast({
-      title: "Succès",
-      description: "Le produit a été ajouté avec succès"
-    });
   };
 
   const addImageField = () => {

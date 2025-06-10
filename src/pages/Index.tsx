@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import ProductForm from "@/components/ProductForm";
 import ProductList from "@/components/ProductList";
@@ -7,45 +7,177 @@ import CategoryManagement from "@/components/CategoryManagement";
 import Dashboard from "@/components/Dashboard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Product, Category } from "@/types";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([
-    { id: "1", name: "Compléments alimentaires", description: "Vitamines et suppléments naturels", created_at: new Date().toISOString() },
-    { id: "2", name: "Soins naturels", description: "Produits de soin à base d'ingrédients naturels", created_at: new Date().toISOString() },
-    { id: "3", name: "Huiles essentielles", description: "Huiles essentielles pures et biologiques", created_at: new Date().toISOString() }
-  ]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
-  const handleAddProduct = (productData: Omit<Product, 'id' | 'created_at' | 'updated_at'>) => {
-    const newProduct: Product = {
-      ...productData,
-      id: Date.now().toString(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+  // Charger les catégories depuis Supabase
+  const fetchCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Erreur lors du chargement des catégories:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les catégories",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Charger les produits depuis Supabase
+  const fetchProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setProducts(data || []);
+    } catch (error) {
+      console.error('Erreur lors du chargement des produits:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les produits",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Charger les données au montage du composant
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      await Promise.all([fetchCategories(), fetchProducts()]);
+      setLoading(false);
     };
-    setProducts(prev => [...prev, newProduct]);
+    loadData();
+  }, []);
+
+  const handleAddProduct = async (productData: Omit<Product, 'id' | 'created_at' | 'updated_at'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .insert([productData])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setProducts(prev => [data, ...prev]);
+      toast({
+        title: "Succès",
+        description: "Le produit a été ajouté avec succès"
+      });
+    } catch (error) {
+      console.error('Erreur lors de l\'ajout du produit:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible d'ajouter le produit",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleAddCategory = (categoryData: Omit<Category, 'id' | 'created_at'>) => {
-    const newCategory: Category = {
-      ...categoryData,
-      id: Date.now().toString(),
-      created_at: new Date().toISOString()
-    };
-    setCategories(prev => [...prev, newCategory]);
+  const handleAddCategory = async (categoryData: Omit<Category, 'id' | 'created_at'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .insert([categoryData])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setCategories(prev => [...prev, data]);
+      toast({
+        title: "Succès",
+        description: "La catégorie a été ajoutée avec succès"
+      });
+    } catch (error) {
+      console.error('Erreur lors de l\'ajout de la catégorie:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible d'ajouter la catégorie",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleDeleteProduct = (productId: string) => {
-    setProducts(prev => prev.filter(p => p.id !== productId));
+  const handleDeleteProduct = async (productId: string) => {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', productId);
+
+      if (error) throw error;
+
+      setProducts(prev => prev.filter(p => p.id !== productId));
+      toast({
+        title: "Succès",
+        description: "Le produit a été supprimé"
+      });
+    } catch (error) {
+      console.error('Erreur lors de la suppression du produit:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer le produit",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleDeleteCategory = (categoryId: string) => {
-    setCategories(prev => prev.filter(c => c.id !== categoryId));
-    // Also update products that had this category
-    setProducts(prev => prev.map(p => 
-      p.category_id === categoryId ? { ...p, category_id: null } : p
-    ));
+  const handleDeleteCategory = async (categoryId: string) => {
+    try {
+      const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', categoryId);
+
+      if (error) throw error;
+
+      setCategories(prev => prev.filter(c => c.id !== categoryId));
+      // Mettre à jour les produits qui avaient cette catégorie
+      setProducts(prev => prev.map(p => 
+        p.category_id === categoryId ? { ...p, category_id: null } : p
+      ));
+      toast({
+        title: "Succès",
+        description: "La catégorie a été supprimée"
+      });
+    } catch (error) {
+      console.error('Erreur lors de la suppression de la catégorie:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer la catégorie",
+        variant: "destructive"
+      });
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Chargement des données...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

@@ -9,7 +9,7 @@ export interface Product {
   is_active: boolean;
   created_at: string;
   updated_at: string;
-  images?: string[] | null; // JSONB field for multiple images
+  images: string[] | null; // JSONB field for multiple images
 }
 
 export interface Category {
