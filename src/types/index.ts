@@ -28,3 +28,17 @@ export interface ProductFormData {
   is_active: boolean;
   images: string[];
 }
+
+// Helper type for Supabase data transformation
+export interface SupabaseProduct {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  image_url: string | null;
+  category_id: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  images: any; // Json type from Supabase
+}

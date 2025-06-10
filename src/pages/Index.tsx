@@ -6,7 +6,7 @@ import ProductList from "@/components/ProductList";
 import CategoryManagement from "@/components/CategoryManagement";
 import Dashboard from "@/components/Dashboard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Product, Category } from "@/types";
+import { Product, Category, SupabaseProduct } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -15,6 +15,14 @@ const Index = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+
+  // Helper function to transform Supabase data to our Product type
+  const transformSupabaseProduct = (supabaseProduct: SupabaseProduct): Product => {
+    return {
+      ...supabaseProduct,
+      images: Array.isArray(supabaseProduct.images) ? supabaseProduct.images : null
+    };
+  };
 
   // Charger les catégories depuis Supabase
   const fetchCategories = async () => {
@@ -45,7 +53,10 @@ const Index = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setProducts(data || []);
+      
+      // Transform the data to match our Product interface
+      const transformedProducts = (data || []).map(transformSupabaseProduct);
+      setProducts(transformedProducts);
     } catch (error) {
       console.error('Erreur lors du chargement des produits:', error);
       toast({
@@ -76,7 +87,8 @@ const Index = () => {
 
       if (error) throw error;
 
-      setProducts(prev => [data, ...prev]);
+      const transformedProduct = transformSupabaseProduct(data);
+      setProducts(prev => [transformedProduct, ...prev]);
       toast({
         title: "Succès",
         description: "Le produit a été ajouté avec succès"
