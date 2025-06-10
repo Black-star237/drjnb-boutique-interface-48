@@ -27,6 +27,7 @@ const ProductEditModal = ({ product, categories, isOpen, onClose, onSave }: Prod
     price: "",
     category_id: "",
     is_active: true,
+    image_url: "",
     images: [] as string[]
   });
 
@@ -38,6 +39,7 @@ const ProductEditModal = ({ product, categories, isOpen, onClose, onSave }: Prod
         price: product.price.toString(),
         category_id: product.category_id || "",
         is_active: product.is_active,
+        image_url: product.image_url || "",
         images: product.images || []
       });
     }
@@ -55,10 +57,10 @@ const ProductEditModal = ({ product, categories, isOpen, onClose, onSave }: Prod
       return;
     }
 
-    if (formData.images.length === 0) {
+    if (!formData.image_url) {
       toast({
         title: "Erreur",
-        description: "Veuillez ajouter au moins une image",
+        description: "Veuillez ajouter au moins une image principale",
         variant: "destructive"
       });
       return;
@@ -68,7 +70,7 @@ const ProductEditModal = ({ product, categories, isOpen, onClose, onSave }: Prod
       name: formData.name,
       description: formData.description || null,
       price: parseFloat(formData.price),
-      image_url: formData.images[0] || null,
+      image_url: formData.image_url,
       category_id: formData.category_id || null,
       is_active: formData.is_active,
       images: formData.images
@@ -87,6 +89,7 @@ const ProductEditModal = ({ product, categories, isOpen, onClose, onSave }: Prod
       price: "",
       category_id: "",
       is_active: true,
+      image_url: "",
       images: []
     });
   };
@@ -158,8 +161,10 @@ const ProductEditModal = ({ product, categories, isOpen, onClose, onSave }: Prod
           </div>
 
           <ImageUpload
-            images={formData.images}
-            onImagesChange={(images) => setFormData(prev => ({ ...prev, images }))}
+            mainImage={formData.image_url}
+            galleryImages={formData.images}
+            onMainImageChange={(imageUrl) => setFormData(prev => ({ ...prev, image_url: imageUrl }))}
+            onGalleryImagesChange={(images) => setFormData(prev => ({ ...prev, images }))}
             maxImages={5}
           />
 
