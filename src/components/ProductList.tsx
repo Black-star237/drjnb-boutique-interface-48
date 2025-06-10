@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,17 +6,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Search, Trash2, Edit, Eye, EyeOff, ChevronLeft, ChevronRight } from "lucide-react";
 import { Product, Category } from "@/types";
+import ProductEditModal from "./ProductEditModal";
 
 interface ProductListProps {
   products: Product[];
   categories: Category[];
   onDeleteProduct: (productId: string) => void;
+  onUpdateProduct: (productId: string, productData: Omit<Product, 'id' | 'created_at' | 'updated_at'>) => void;
 }
 
-const ProductList = ({ products, categories, onDeleteProduct }: ProductListProps) => {
+const ProductList = ({ products, categories, onDeleteProduct, onUpdateProduct }: ProductListProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [imageIndices, setImageIndices] = useState<{[key: string]: number}>({});
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -52,6 +55,22 @@ const ProductList = ({ products, categories, onDeleteProduct }: ProductListProps
       ...prev,
       [productId]: ((prev[productId] || 0) - 1 + totalImages) % totalImages
     }));
+  };
+
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveProduct = (productData: Omit<Product, 'id' | 'created_at' | 'updated_at'>) => {
+    if (editingProduct) {
+      onUpdateProduct(editingProduct.id, productData);
+    }
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setEditingProduct(null);
   };
 
   return (
@@ -170,7 +189,7 @@ const ProductList = ({ products, categories, onDeleteProduct }: ProductListProps
                 
                 <div className="flex items-center justify-between">
                   <div className="text-2xl font-bold text-primary">
-                    {product.price}€
+                    {product.price.toLocaleString()} FCFA
                   </div>
                   <Badge variant={product.is_active ? "default" : "secondary"}>
                     {product.is_active ? "Actif" : "Inactif"}
@@ -178,7 +197,12 @@ const ProductList = ({ products, categories, onDeleteProduct }: ProductListProps
                 </div>
                 
                 <div className="flex space-x-2 pt-2">
-                  <Button variant="outline" size="sm" className="flex-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => handleEditProduct(product)}
+                  >
                     <Edit className="h-4 w-4 mr-2" />
                     Modifier
                   </Button>
@@ -209,6 +233,14 @@ const ProductList = ({ products, categories, onDeleteProduct }: ProductListProps
           </CardContent>
         </Card>
       )}
+
+      <ProductEditModal
+        product={editingProduct}
+        categories={categories}
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        onSave={handleSaveProduct}
+      />
     </div>
   );
 };

@@ -103,14 +103,14 @@ const ProductForm = ({ categories, onSubmit }: ProductFormProps) => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="price">Prix (€) *</Label>
+                <Label htmlFor="price">Prix (FCFA) *</Label>
                 <Input
                   id="price"
                   type="number"
-                  step="0.01"
+                  step="1"
                   value={formData.price}
                   onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
-                  placeholder="0.00"
+                  placeholder="0"
                   required
                 />
               </div>

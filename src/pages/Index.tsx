@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import ProductForm from "@/components/ProductForm";
@@ -180,6 +179,33 @@ const Index = () => {
     }
   };
 
+  const handleUpdateProduct = async (productId: string, productData: Omit<Product, 'id' | 'created_at' | 'updated_at'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .update(productData)
+        .eq('id', productId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const transformedProduct = transformSupabaseProduct(data);
+      setProducts(prev => prev.map(p => p.id === productId ? transformedProduct : p));
+      toast({
+        title: "Succès",
+        description: "Le produit a été modifié avec succès"
+      });
+    } catch (error) {
+      console.error('Erreur lors de la modification du produit:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de modifier le produit",
+        variant: "destructive"
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -214,6 +240,7 @@ const Index = () => {
                 products={products} 
                 categories={categories}
                 onDeleteProduct={handleDeleteProduct}
+                onUpdateProduct={handleUpdateProduct}
               />
             </TabsContent>
 
