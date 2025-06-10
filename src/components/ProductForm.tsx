@@ -7,9 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Plus, X } from "lucide-react";
 import { Product, Category } from "@/types";
 import { useToast } from "@/hooks/use-toast";
+import ImageUpload from "./ImageUpload";
 
 interface ProductFormProps {
   categories: Category[];
@@ -22,10 +22,9 @@ const ProductForm = ({ categories, onSubmit }: ProductFormProps) => {
     name: "",
     description: "",
     price: "",
-    image_url: "",
     category_id: "",
     is_active: true,
-    images: [""]
+    images: [] as string[]
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -40,14 +39,23 @@ const ProductForm = ({ categories, onSubmit }: ProductFormProps) => {
       return;
     }
 
+    if (formData.images.length === 0) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez ajouter au moins une image",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const productData = {
       name: formData.name,
       description: formData.description || null,
       price: parseFloat(formData.price),
-      image_url: formData.image_url || null,
+      image_url: formData.images[0] || null, // La première image comme image principale
       category_id: formData.category_id || null,
       is_active: formData.is_active,
-      images: formData.images.filter(img => img.trim() !== "")
+      images: formData.images
     };
 
     onSubmit(productData);
@@ -57,32 +65,10 @@ const ProductForm = ({ categories, onSubmit }: ProductFormProps) => {
       name: "",
       description: "",
       price: "",
-      image_url: "",
       category_id: "",
       is_active: true,
-      images: [""]
+      images: []
     });
-  };
-
-  const addImageField = () => {
-    setFormData(prev => ({
-      ...prev,
-      images: [...prev.images, ""]
-    }));
-  };
-
-  const removeImageField = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index)
-    }));
-  };
-
-  const updateImageField = (index: number, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      images: prev.images.map((img, i) => i === index ? value : img)
-    }));
   };
 
   return (
@@ -149,51 +135,11 @@ const ProductForm = ({ categories, onSubmit }: ProductFormProps) => {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="image_url">Image principale (URL)</Label>
-              <Input
-                id="image_url"
-                value={formData.image_url}
-                onChange={(e) => setFormData(prev => ({ ...prev, image_url: e.target.value }))}
-                placeholder="https://exemple.com/image.jpg"
-              />
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label>Images supplémentaires</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={addImageField}
-                  className="flex items-center gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  Ajouter une image
-                </Button>
-              </div>
-              
-              {formData.images.map((image, index) => (
-                <div key={index} className="flex gap-2">
-                  <Input
-                    value={image}
-                    onChange={(e) => updateImageField(index, e.target.value)}
-                    placeholder="https://exemple.com/image.jpg"
-                  />
-                  {formData.images.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => removeImageField(index)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              ))}
-            </div>
+            <ImageUpload
+              images={formData.images}
+              onImagesChange={(images) => setFormData(prev => ({ ...prev, images }))}
+              maxImages={5}
+            />
 
             <div className="flex items-center space-x-2">
               <Switch

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Search, Trash2, Edit, Eye, EyeOff } from "lucide-react";
+import { Search, Trash2, Edit, Eye, EyeOff, ChevronLeft, ChevronRight } from "lucide-react";
 import { Product, Category } from "@/types";
 
 interface ProductListProps {
@@ -17,6 +17,7 @@ interface ProductListProps {
 const ProductList = ({ products, categories, onDeleteProduct }: ProductListProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [imageIndices, setImageIndices] = useState<{[key: string]: number}>({});
 
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -29,6 +30,28 @@ const ProductList = ({ products, categories, onDeleteProduct }: ProductListProps
     if (!categoryId) return "Sans catégorie";
     const category = categories.find(c => c.id === categoryId);
     return category?.name || "Catégorie inconnue";
+  };
+
+  const getCurrentImageUrl = (product: Product) => {
+    if (!product.images || product.images.length === 0) {
+      return product.image_url;
+    }
+    const currentIndex = imageIndices[product.id] || 0;
+    return product.images[currentIndex];
+  };
+
+  const nextImage = (productId: string, totalImages: number) => {
+    setImageIndices(prev => ({
+      ...prev,
+      [productId]: ((prev[productId] || 0) + 1) % totalImages
+    }));
+  };
+
+  const prevImage = (productId: string, totalImages: number) => {
+    setImageIndices(prev => ({
+      ...prev,
+      [productId]: ((prev[productId] || 0) - 1 + totalImages) % totalImages
+    }));
   };
 
   return (
@@ -72,72 +95,106 @@ const ProductList = ({ products, categories, onDeleteProduct }: ProductListProps
 
       {/* Liste des produits */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredProducts.map((product) => (
-          <Card key={product.id} className="animate-scale-in hover:shadow-lg transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <CardTitle className="text-lg line-clamp-2">{product.name}</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {getCategoryName(product.category_id)}
+        {filteredProducts.map((product) => {
+          const hasMultipleImages = product.images && product.images.length > 1;
+          const currentImageUrl = getCurrentImageUrl(product);
+          const currentIndex = imageIndices[product.id] || 0;
+          const totalImages = product.images?.length || 0;
+
+          return (
+            <Card key={product.id} className="animate-scale-in hover:shadow-lg transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <CardTitle className="text-lg line-clamp-2">{product.name}</CardTitle>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {getCategoryName(product.category_id)}
+                    </p>
+                  </div>
+                  <div className="flex items-center space-x-1 ml-2">
+                    {product.is_active ? (
+                      <Eye className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <EyeOff className="h-4 w-4 text-gray-400" />
+                    )}
+                  </div>
+                </div>
+              </CardHeader>
+              
+              <CardContent className="space-y-4">
+                {currentImageUrl && (
+                  <div className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden">
+                    <img
+                      src={currentImageUrl}
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = "/placeholder.svg";
+                      }}
+                    />
+                    
+                    {/* Navigation des images */}
+                    {hasMultipleImages && (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => prevImage(product.id, totalImages)}
+                          className="absolute left-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-white/80 hover:bg-white"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => nextImage(product.id, totalImages)}
+                          className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 bg-white/80 hover:bg-white"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                        
+                        {/* Indicateur d'images */}
+                        <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                          {currentIndex + 1}/{totalImages}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+                
+                {product.description && (
+                  <p className="text-sm text-muted-foreground line-clamp-3">
+                    {product.description}
                   </p>
+                )}
+                
+                <div className="flex items-center justify-between">
+                  <div className="text-2xl font-bold text-primary">
+                    {product.price}€
+                  </div>
+                  <Badge variant={product.is_active ? "default" : "secondary"}>
+                    {product.is_active ? "Actif" : "Inactif"}
+                  </Badge>
                 </div>
-                <div className="flex items-center space-x-1 ml-2">
-                  {product.is_active ? (
-                    <Eye className="h-4 w-4 text-green-600" />
-                  ) : (
-                    <EyeOff className="h-4 w-4 text-gray-400" />
-                  )}
+                
+                <div className="flex space-x-2 pt-2">
+                  <Button variant="outline" size="sm" className="flex-1">
+                    <Edit className="h-4 w-4 mr-2" />
+                    Modifier
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onDeleteProduct(product.id)}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
-              </div>
-            </CardHeader>
-            
-            <CardContent className="space-y-4">
-              {product.image_url && (
-                <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
-                  <img
-                    src={product.image_url}
-                    alt={product.name}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.src = "/placeholder.svg";
-                    }}
-                  />
-                </div>
-              )}
-              
-              {product.description && (
-                <p className="text-sm text-muted-foreground line-clamp-3">
-                  {product.description}
-                </p>
-              )}
-              
-              <div className="flex items-center justify-between">
-                <div className="text-2xl font-bold text-primary">
-                  {product.price}€
-                </div>
-                <Badge variant={product.is_active ? "default" : "secondary"}>
-                  {product.is_active ? "Actif" : "Inactif"}
-                </Badge>
-              </div>
-              
-              <div className="flex space-x-2 pt-2">
-                <Button variant="outline" size="sm" className="flex-1">
-                  <Edit className="h-4 w-4 mr-2" />
-                  Modifier
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onDeleteProduct(product.id)}
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {filteredProducts.length === 0 && (
