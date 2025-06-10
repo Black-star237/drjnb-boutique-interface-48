@@ -224,11 +224,33 @@ const Index = () => {
       <main className="container mx-auto px-4 py-8">
         <div className="animate-fade-in">
           <Tabs defaultValue="dashboard" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 mb-8">
-              <TabsTrigger value="dashboard">Tableau de bord</TabsTrigger>
-              <TabsTrigger value="products">Produits</TabsTrigger>
-              <TabsTrigger value="add-product">Ajouter un produit</TabsTrigger>
-              <TabsTrigger value="categories">Catégories</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 mb-8 h-auto p-1">
+              <TabsTrigger 
+                value="dashboard" 
+                className="text-xs sm:text-sm px-2 py-2 sm:px-3 sm:py-1.5 whitespace-nowrap"
+              >
+                <span className="hidden sm:inline">Tableau de bord</span>
+                <span className="sm:hidden">Tableau</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="products" 
+                className="text-xs sm:text-sm px-2 py-2 sm:px-3 sm:py-1.5 whitespace-nowrap"
+              >
+                Produits
+              </TabsTrigger>
+              <TabsTrigger 
+                value="add-product" 
+                className="text-xs sm:text-sm px-2 py-2 sm:px-3 sm:py-1.5 whitespace-nowrap"
+              >
+                <span className="hidden sm:inline">Ajouter un produit</span>
+                <span className="sm:hidden">Ajouter</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="categories" 
+                className="text-xs sm:text-sm px-2 py-2 sm:px-3 sm:py-1.5 whitespace-nowrap"
+              >
+                Catégories
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="dashboard" className="animate-scale-in">
